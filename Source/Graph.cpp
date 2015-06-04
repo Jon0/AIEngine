@@ -101,6 +101,7 @@ ActionOrder Graph::get_best_action() {
 
 	// current amounts
 	ResourceSet current_amounts = get_amounts();
+	double current_score = win_func(current_amounts);
 
 	std::vector<ActionOrder> orders;
 
@@ -108,29 +109,34 @@ ActionOrder Graph::get_best_action() {
 	orders.push_back(ActionOrder(this));
 
 	//
-	int max_iterations = 3;
-	for (int time = 0; time < max_iterations; ++time) {
+	int max_iterations = 10;
+	for (int t = 0; t < max_iterations; ++t) {
+
+		// make new orders based of the existing list
+		std::vector<ActionOrder> new_orders;
 		for (auto &order : orders) {
-			ResourceSet order_amounts = order.get_effect(current_amounts, time);
+			ResourceSet order_amounts = order.get_effect(current_amounts, t);
 
 			// get available actions
 			// at time within the orders context
 			std::vector<Action *> available;
 			for (auto &a : action) {
-				//if (a.second->can_do_event(order_amounts)) {
-				//	available.push_back(a.second.get());
-				//}
-				available.push_back(a.second.get());
+				if (a.second->can_do_event(order_amounts)) {
+					available.push_back(a.second.get());
+				}
 			}
 
 			for (auto &a : available) {
 				// add to the order
 				// and add a new branch
 				ActionOrder new_order = order;
-				new_order.add_action(time, a);
-				orders.push_back(new_order);
+				new_order.add_action(t, a);
+				new_orders.push_back(new_order);
 			}
 
+		}
+		for (auto &order : new_orders) {
+			orders.push_back(order);
 		}
 	}
 
@@ -138,13 +144,17 @@ ActionOrder Graph::get_best_action() {
 	ActionOrder *best = &orders.front();
 	double best_score = 0;
 	for (auto &order : orders) {
-		double score = win_func(order.get_effect(current_amounts)); // / order.length();
+
+		// TODO: divide by time taken
+		double score = win_func(order.get_effect(current_amounts)) - current_score;
+
 		if (score > best_score) {
 			best = &order;
 			best_score = score;
 		}
 	}
 
+	best->set_value(best_score);
 	return *best;
 }
 

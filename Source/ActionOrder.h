@@ -27,6 +27,10 @@ public:
 	 */
 	double length();
 
+	double value();
+
+	void set_value(double v);
+
 	void add_action(double time, Action *a);
 
 	std::pair<double, Action *> first_action();
@@ -50,7 +54,7 @@ public:
 
 private:
 	Graph *g;
-	double total_time;
+	double total_time, graph_value;
 
 	// time and action pairs, ordered by times
 	std::vector<std::pair<double, Action *>> actions;

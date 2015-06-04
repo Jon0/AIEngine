@@ -51,7 +51,12 @@ ResourceSet ResourceSet::operator+(const ResourceSet &other) {
 }
 
 std::string to_string(graph::ResourceSet rs) {
-	return "todo resource set";
+	std::string result = "[";
+	for (auto &a : rs.get_amounts()) {
+		result += a.first->get_name() + " : " + std::to_string(a.second) + " ";
+	}
+	result += "]";
+	return result;
 }
 
 }

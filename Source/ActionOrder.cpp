@@ -14,13 +14,22 @@ bool compare(std::pair<double, Action *> a, std::pair<double, Action *> b) {
 ActionOrder::ActionOrder(Graph *gr)
 	:
 	g(gr),
-	total_time(0.0) {
+	total_time(0.0),
+	graph_value(0.0) {
 }
 
 ActionOrder::~ActionOrder() {}
 
 double ActionOrder::length() {
 	return total_time;
+}
+
+double ActionOrder::value() {
+	return graph_value;
+}
+
+void ActionOrder::set_value(double v) {
+	graph_value = v;
 }
 
 void ActionOrder::add_action(double time, Action *a) {
@@ -46,7 +55,7 @@ std::vector<std::pair<double, Action *>> ActionOrder::get_actions() {
 }
 
 ResourceSet ActionOrder::get_effect() {
-	get_effect(g->get_amounts(), length());
+	get_effect(g->get_amounts());
 }
 
 ResourceSet ActionOrder::get_effect(ResourceSet a) {
@@ -57,10 +66,7 @@ ResourceSet ActionOrder::get_effect(ResourceSet set, double time_duration) {
 	ResourceSet result = set;
 
 	// actions to be started
-	std::deque<std::pair<double, Action *>> to_start;
-	for (auto &a : actions) {
-		to_start.push_back(a);
-	}
+	std::deque<std::pair<double, Action *>> to_start(actions.begin(), actions.end());
 
 	// actions to be completed
 	// time, resource, amount
@@ -92,7 +98,8 @@ std::string to_string(ActionOrder &o) {
 	for (auto &a : o.get_actions()) {
 		result += "\t" + std::to_string(a.first) + " : " + to_string(*a.second) + "\n";
 	}
-	result += "} [" + std::to_string(o.length()) + "]\n";
+	result += "\t" + std::to_string(o.length()) + " : complete\n";
+	result += "} [" + std::to_string(o.value()) + "]\n";
 	return result;
 }
 
