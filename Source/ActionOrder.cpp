@@ -55,7 +55,7 @@ std::vector<std::pair<double, Action *>> ActionOrder::get_actions() const {
 }
 
 ResourceSet ActionOrder::get_effect() {
-	get_effect(g->get_amounts());
+	return get_effect(g->get_amounts());
 }
 
 ResourceSet ActionOrder::get_effect(ResourceSet a) {
