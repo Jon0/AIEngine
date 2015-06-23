@@ -1,0 +1,9 @@
+# resources per player
+resource minerals
+resource miners
+resource attackers
+resource defenders
+
+flow 0 miners -> 1 minerals
+
+action -1 minerals 1 miners 10

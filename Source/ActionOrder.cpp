@@ -20,11 +20,11 @@ ActionOrder::ActionOrder(Graph *gr)
 
 ActionOrder::~ActionOrder() {}
 
-double ActionOrder::length() {
+double ActionOrder::length() const {
 	return total_time;
 }
 
-double ActionOrder::value() {
+double ActionOrder::value() const {
 	return graph_value;
 }
 
@@ -50,7 +50,7 @@ std::pair<double, Action *> ActionOrder::first_action() {
 }
 
 
-std::vector<std::pair<double, Action *>> ActionOrder::get_actions() {
+std::vector<std::pair<double, Action *>> ActionOrder::get_actions() const {
 	return actions;
 }
 
@@ -79,7 +79,7 @@ ResourceSet ActionOrder::get_effect(ResourceSet set, double time_duration) {
 
 		// add effects
 		// TODO: may be many actions on time t
-		if (!to_start.empty() && t >= to_start.front().first) {
+		while (!to_start.empty() && t >= to_start.front().first) {
 
 			// apply all effects instantly for now
 			Action *act = to_start.front().second;
@@ -93,7 +93,21 @@ ResourceSet ActionOrder::get_effect(ResourceSet set, double time_duration) {
 	return result;
 }
 
-std::string to_string(ActionOrder &o) {
+std::string ActionOrder::effect_str(Graph *g) {
+	std::string result = "{\n";
+	for (auto &a : get_actions()) {
+		result += "\t" + std::to_string(a.first) + " "
+				+ to_string(get_effect(g->get_amounts(), a.first)) + " : "
+				+ to_string(*a.second) + "\n";
+	}
+	result += "\t" + std::to_string(length()) + " "
+			+ to_string(get_effect(g->get_amounts())) + " : complete\n";
+	result += "}\n";
+
+	return result;
+}
+
+std::string to_string(const ActionOrder &o) {
 	std::string result = "{\n";
 	for (auto &a : o.get_actions()) {
 		result += "\t" + std::to_string(a.first) + " : " + to_string(*a.second) + "\n";

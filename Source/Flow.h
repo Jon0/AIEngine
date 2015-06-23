@@ -16,7 +16,8 @@ public:
 
 	double get_time() override;
 
-	std::unordered_map<Resource *, double> get_effects() override;
+	ResourceSetDelta get_pre_effect() override;
+	ResourceSetDelta get_post_effect() override;
 
 	Resource *get_to();
 	Resource *get_from();

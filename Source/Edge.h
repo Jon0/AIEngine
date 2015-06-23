@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 
+#include "ResourceSet.h"
+
 namespace graph {
 
 class Resource;
@@ -20,7 +22,8 @@ public:
 
 	virtual double get_time() = 0;
 
-	virtual std::unordered_map<Resource *, double> get_effects() = 0;
+	virtual ResourceSetDelta get_pre_effect() = 0;
+	virtual ResourceSetDelta get_post_effect() = 0;
 
 };
 

@@ -20,8 +20,14 @@ double Flow::get_time() {
 	return 1.0;
 }
 
-std::unordered_map<Resource *, double> Flow::get_effects() {
-	return effect;
+ResourceSetDelta Flow::get_pre_effect() {
+	// TODO this
+	return ResourceSetDelta();
+}
+
+ResourceSetDelta Flow::get_post_effect() {
+	// TODO this
+	return ResourceSetDelta();
 }
 
 Resource *Flow::get_to() {

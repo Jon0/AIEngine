@@ -25,9 +25,9 @@ public:
 	/**
 	 * time when the last action gets completed
 	 */
-	double length();
+	double length() const;
 
-	double value();
+	double value() const;
 
 	void set_value(double v);
 
@@ -35,7 +35,7 @@ public:
 
 	std::pair<double, Action *> first_action();
 
-	std::vector<std::pair<double, Action *>> get_actions();
+	std::vector<std::pair<double, Action *>> get_actions() const;
 
 	/**
 	 * effect if applied to current resources
@@ -52,6 +52,11 @@ public:
 	 */
 	ResourceSet get_effect(ResourceSet a, double time_duration);
 
+	/**
+	 * debug info
+	 */
+	std::string effect_str(Graph *);
+
 private:
 	Graph *g;
 	double total_time, graph_value;
@@ -61,7 +66,7 @@ private:
 
 };
 
-std::string to_string(ActionOrder &o);
+std::string to_string(const ActionOrder &o);
 
 }
 

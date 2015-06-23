@@ -1,35 +1,43 @@
 #include <iostream>
 
 #include <ActionOrder.h>
+#include <ActionProcess.h>
 #include <Graph.h>
 
 using namespace graph;
 
 int main() {
-	Graph *g = Graph::create({"A", "B", "C", "D"});
+	std::cout << "starting test\n";
 
-	g->set_win_func([g](ResourceSet r) {
-		return r.get_amount(g->get_resource("A"));
+	GraphProducer producer;
+	producer.add_resource(Resource("Mineral"));
+	producer.add_resource(Resource("Worker"));
+
+	// some actions
+	ResourceSetDelta pre({{"Worker", -1.0}});
+	ResourceSetDelta post({{"Worker", 1.0}, {"Mineral", 10.0}});
+	producer.add_action(Action("Mine", 1.0, pre, post));
+
+	ResourceSetDelta pre1({{"Mineral", -50.0}});
+	ResourceSetDelta post1({{"Worker", 1.0}});
+	producer.add_action(Action("Train", 1.0, pre1, post1));
+
+	// construct graph
+	Graph g(producer);
+	g.set_win_func([&g](const ResourceSet &r) {
+		return r.get_amount(g.get_resource("Worker"));
 	});
 
 	// initial amounts
-	g->get_resource("B")->adjust(3.0);
+	g.get_resource("Worker")->adjust(6.0);
+	std::cout << to_string(g) << std::endl;
 
-	// some actions
-	g->add_action("1");
-	Action *a = g->get_action("1");
-	a->add_effect(g->get_resource("B"), -1.0, true);
-	a->add_effect(g->get_resource("A"), 2.0);
+	ActionProcessV1 p;
+	ActionOrder best = p.get_best_action(&g);
 
-	//g->add_action("2");
-	//Action *b = g->get_action("2");
-	//b->add_effect(g->get_resource("B"), 3.0);
-
-	std::cout << to_string(*g) << std::endl;
-
-	auto best = g->get_best_action();
-	std::cout << to_string(best) << std::endl;
-	std::cout << to_string(best.get_effect(g->get_amounts(), 55.0)) << "\n";
+	std::cout << "best action:\n";
+	std::cout << best.effect_str(&g) << std::endl;
+	//std::cout << to_string(best.get_effect(g.get_amounts(), 55.0)) << "\n";
 
 	return 0;
 }

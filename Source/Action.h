@@ -13,35 +13,42 @@ class Resource;
 
 class Action : public Edge {
 public:
-	Action(std::string name);
+	Action(std::string name, double time, const ResourceSetDelta &pre, const ResourceSetDelta &post);
 	~Action();
+
+	std::string get_name() const;
 
 	bool controlled() override;
 
 	double get_time() override;
 
-	std::unordered_map<Resource *, double> get_effects() override;
+	ResourceSetDelta get_pre_effect() override;
+	ResourceSetDelta get_post_effect() override;
 
 	void apply_start_effect(ResourceSet &r);
 	void apply_end_effect(ResourceSet &r);
 
 	/**
-	 * the resource effect expected from using this action
-	 * some actions can only occur with a positive resource amount
-	 */
-	void add_effect(Resource *r, double amount, bool must_be_positive=false);
-
-	/**
 	 * can the action be used with these resources
 	 */
-	bool can_do_event(ResourceSet amount);
+	bool can_do_event(Graph *g, ResourceSet amount);
 
-	void do_event();
+	/**
+	 * modifies graph resource amounts
+	 * if action is successful
+	 */
+	void do_event(Graph *g);
 	void set_event(std::function<bool()> e);
 
 private:
-	std::unordered_map<Resource *, double> resource;
-	std::unordered_map<Resource *, bool> require_positive;
+	// type key
+	const std::string action_name;
+
+	// type attributes
+	const double action_time;
+	const ResourceSetDelta pre_effect, post_effect;
+
+	// apply action
 	std::function<bool()> act_func;
 
 };

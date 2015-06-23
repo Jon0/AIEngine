@@ -5,18 +5,26 @@
 
 namespace graph {
 
-Resource::Resource(Graph *g, std::string name)
+Resource::Resource(std::string name, bool allow_negative)
 	:
-	graph(g),
 	resource_name(name),
+	allow_neg(allow_negative),
 	amount(0.0),
 	updates(0) {
 }
 
 Resource::~Resource() {}
 
+bool Resource::has_location() {
+	return false;
+}
+
 std::string Resource::get_name() const {
 	return resource_name;
+}
+
+bool Resource::allow_negative() const {
+	return allow_neg;
 }
 
 void Resource::update() {
@@ -48,7 +56,7 @@ void Resource::adjust(double a) {
 	amount += a;
 }
 
-double Resource::get_amount() {
+double Resource::get_amount() const {
 	return amount;
 }
 
@@ -60,11 +68,10 @@ void Resource::set_update_function(std::function<double()> f) {
 	update_func = f;
 }
 
-void Resource::produces(Resource *other, double rate_in, double rate_out) {
-	flows_out.emplace_back(std::make_unique<Flow>(this, other, rate_in, rate_out));
-	Flow *flow = flows_out.back().get();
+void Resource::produces(Graph *graph, Resource *other, double rate_in, double rate_out) {
+	Flow *flow = graph->add_flow(Flow(this, other, rate_in, rate_out));
+	flows_out.emplace_back(flow);
 	other->add_flow_in(flow);
-	graph->register_flow(flow);
 }
 
 void Resource::effect_of(Action *a) {
@@ -79,7 +86,7 @@ void Resource::add_flow_in(Flow *f) {
 	flows_in.push_back(f);
 }
 
-std::string to_string(Resource &r) {
+std::string to_string(const Resource &r) {
 	return r.get_name() + ": " + std::to_string(r.get_amount());
 }
 

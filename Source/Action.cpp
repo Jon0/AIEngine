@@ -1,11 +1,22 @@
 #include "Action.h"
+#include "Graph.h"
 #include "Resource.h"
 
 namespace graph {
 
-Action::Action(std::string name) {}
+Action::Action(std::string name, double time, const ResourceSetDelta &pre, const ResourceSetDelta &post)
+	:
+	action_name(name),
+	action_time(time),
+	pre_effect(pre),
+	post_effect(post) {
+}
 
 Action::~Action() {}
+
+std::string Action::get_name() const {
+	return action_name;
+}
 
 bool Action::controlled() {
 	return true;
@@ -15,47 +26,46 @@ double Action::get_time() {
 	return 1.0;
 }
 
-std::unordered_map<Resource *, double> Action::get_effects() {
-	return resource;
+ResourceSetDelta Action::get_pre_effect() {
+	return pre_effect;
+}
+
+ResourceSetDelta Action::get_post_effect() {
+	return post_effect;
 }
 
 void Action::apply_start_effect(ResourceSet &r) {
-	for (auto &e : resource) {
+	for (auto &e : pre_effect.get_deltas()) {
 		r.adjust_amount(e.first, e.second);
 	}
 }
 
 void Action::apply_end_effect(ResourceSet &r) {
-	// TODO some effects occur later
+	for (auto &e : post_effect.get_deltas()) {
+		r.adjust_amount(e.first, e.second);
+	}
 }
 
-void Action::add_effect(Resource *r, double amount, bool must_be_positive) {
-	resource.emplace(std::make_pair(r, amount));
-	require_positive.emplace(std::make_pair(r, must_be_positive));
-
-	// link to the resource
-	r->effect_of(this);
-}
-
-bool Action::can_do_event(ResourceSet amount) {
+bool Action::can_do_event(Graph *g, ResourceSet amount) {
 
 	// check all required resources are available
 	for (auto &a : amount.get_amounts()) {
-		if (require_positive.count(a.first) > 0 &&
-			require_positive[a.first] &&
-			a.second < resource[a.first]) {
+
+		// if the amount is not enough
+		if (!g->get_resource(a.first)->allow_negative() &&
+			a.second < -pre_effect.get_delta(a.first)) {
 			return false;
 		}
 	}
 	return true;
 }
 
-void Action::do_event() {
+void Action::do_event(Graph *g) {
 	if (act_func && act_func()) {
 
 		// modify the resource amounts
-		for (auto &r : resource) {
-			r.first->adjust(r.second);
+		for (auto &e : pre_effect.get_deltas()) {
+			g->get_resource(e.first)->adjust(e.second);
 		}
 	}
 }
@@ -66,16 +76,10 @@ void Action::set_event(std::function<bool()> e) {
 
 std::string to_string(Action &a) {
 	std::string result = "[";
-	auto effects = a.get_effects();
-	int i = 0, effects_size = effects.size();
-	for (auto &e : effects) {
-		result += e.first->get_name() + ": " + std::to_string(e.second);
-		if (i < effects_size - 1) {
-			result += ", ";
-		}
-		i++;
-	}
-	result += "]";
+	result += a.get_name() + ", ";
+	result += std::to_string(a.get_time()) + ", ";
+	result += to_string(a.get_pre_effect()) + " >> ";
+	result += to_string(a.get_post_effect()) + "]";
 	return result;
 }
 

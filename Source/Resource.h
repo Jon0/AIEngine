@@ -13,10 +13,14 @@ class Graph;
 
 class Resource {
 public:
-	Resource(Graph *g, std::string name);
+	Resource(std::string name, bool allow_negative=false);
 	~Resource();
 
+	virtual bool has_location();
+
 	std::string get_name() const;
+
+	bool allow_negative() const;
 
 	/**
 	 * use the update function
@@ -31,7 +35,7 @@ public:
 	/**
 	 * return the stockpiled amount
 	 */
-	double get_amount();
+	double get_amount() const;
 
 	/**
 	 * return actions which affect this resource
@@ -48,7 +52,7 @@ public:
 	/**
 	 * creates a flow from this resource to another
 	 */
-	void produces(Resource *other, double rate_in, double rate_out);
+	void produces(Graph *graph, Resource *other, double rate_in, double rate_out);
 
 	/**
 	 * adds an action to this resources list of action
@@ -59,8 +63,8 @@ public:
 	std::string debug();
 
 private:
-	Graph *graph;
-	std::string resource_name;
+	const std::string resource_name;
+	const bool allow_neg;
 	double amount, amount_d, value;
 	int updates;
 
@@ -68,12 +72,12 @@ private:
 
 	std::function<double()> update_func;
 
-	std::vector<std::unique_ptr<Flow>> flows_out;
+	std::vector<Flow *> flows_out;
 	std::vector<Flow *> flows_in;
 	std::vector<Action *> effect_action;
 
 };
 
-std::string to_string(Resource &r);
+std::string to_string(const Resource &r);
 
 }

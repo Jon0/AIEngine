@@ -1,11 +1,13 @@
 #pragma once
 
+#include <list>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "Action.h"
+#include "Location.h"
 #include "Resource.h"
 #include "ResourceSet.h"
 
@@ -15,65 +17,73 @@ class ActionOrder;
 class Edge;
 class Flow;
 
+class GraphProducer {
+public:
+	GraphProducer();
+
+	void add_action(const Action &);
+	void add_location(const Location &);
+	void add_resource(const Resource &);
+
+	std::vector<Action> get_actions() const;
+	std::vector<Location> get_locations() const;
+	std::vector<Resource> get_resources() const;
+
+private:
+	std::vector<Action> actions;
+	std::vector<Location> locations;
+	std::vector<Resource> resources;
+
+};
+
 class Graph {
 public:
+	Graph(const GraphProducer &);
 	~Graph();
-
-	/**
-	 * returns a new instance
-	 */
-	static Graph *create(std::vector<std::string> resource_names);
 
 	void update();
 
 	// actions
-	void add_action(std::string name);
 	Action *get_action(std::string name);
 
-	std::vector<Action *> get_action_list() const;
+	std::vector<Action *> get_action_list();
 
 	// resources
-	void add_resource(std::string name);
 	Resource *get_resource(std::string name);
 
 	/**
 	 * list of resources ordered as constructed
 	 */
-	std::vector<Resource *> get_resource_list() const;
+	std::vector<Resource *> get_resource_list();
 	ResourceSet get_amounts() const;
 
 	/**
 	 * function to evaluate win probability
 	 */
-	void set_win_func(std::function<double(ResourceSet)> f);
+	void set_win_func(std::function<double(const ResourceSet &)> f);
 
 	double evaluate_win_func();
-	double evaluate_win_func(ResourceSet);
-
-	/**
-	 * calculate the best sequence of actions
-	 * TODO: make const
-	 */
-	ActionOrder get_best_action();
-
-	std::vector<std::string> debug();
+	double evaluate_win_func(const ResourceSet &);
 
 private:
-	Graph();
-
-	void update_actions();
-	void register_flow(Flow *f);
+	void add_action(const Action &);
+	Flow *add_flow(const Flow &);
+	void add_resource(const Resource &);
 
 	// lists ordered by construct order
-	std::vector<Action *> order_act;
-	std::vector<Resource *> order_res;
-	std::vector<Edge *> edge;
-	std::vector<Flow *> flow;
+	// pointers to items must remain so containers
+	// which reallocate will not work
+	std::list<Action> order_act;
+	std::list<Flow> order_flow;
+	std::list<Resource> order_res;
 
-	std::unordered_map<std::string, std::unique_ptr<Action>> action;
-	std::unordered_map<std::string, std::unique_ptr<Resource>> resource;
+	// combined set of actions and flows
+	std::vector<Edge *> order_edge;
 
-	std::function<double(ResourceSet)> win_func;
+	std::unordered_map<std::string, Action *> action;
+	std::unordered_map<std::string, Resource *> resource;
+
+	std::function<double(const ResourceSet &)> win_func;
 
 	friend class Resource;
 
@@ -81,4 +91,4 @@ private:
 
 std::string to_string(Graph &g);
 
-}
+} // namespace graph

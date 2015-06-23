@@ -6,17 +6,43 @@
 
 namespace graph {
 
-Graph *Graph::create(std::vector<std::string> resource_names) {
-	Graph *instance = new Graph();
-	for (auto &n : resource_names) {
-		instance->add_resource(n);
-	}
+GraphProducer::GraphProducer() {}
 
-	return instance;
+void GraphProducer::add_action(const Action &a) {
+	actions.push_back(a);
 }
 
+void GraphProducer::add_location(const Location &l) {
+	locations.push_back(l);
+}
 
-Graph::Graph() {}
+void GraphProducer::add_resource(const Resource &r) {
+	resources.push_back(r);
+}
+
+std::vector<Action> GraphProducer::get_actions() const {
+	return actions;
+}
+
+std::vector<Location> GraphProducer::get_locations() const {
+	return locations;
+}
+
+std::vector<Resource> GraphProducer::get_resources() const {
+	return resources;
+}
+
+Graph::Graph(const GraphProducer &gp) {
+
+	for (auto &a : gp.get_actions()) {
+		add_action(a);
+	}
+	for (auto &n : gp.get_resources()) {
+		add_resource(n);
+	}
+
+	// TODO resource.add_effect for actions
+}
 
 Graph::~Graph() {}
 
@@ -26,46 +52,64 @@ void Graph::update() {
 	for (auto &r : resource) {
 		r.second->update();
 	}
-
-	// TODO: best action
 }
 
-void Graph::add_action(std::string name) {
-	action.emplace(std::make_pair(name, std::make_unique<Action>(name)));
-	order_act.push_back(action[name].get());
-	edge.push_back(action[name].get());
+void Graph::add_action(const Action &a) {
+	order_act.push_back(a);
+	Action *a_ptr = &order_act.back();
+	order_edge.push_back(a_ptr);
+	action.emplace(std::make_pair(a.get_name(), a_ptr));
+}
+
+Flow *Graph::add_flow(const Flow &f) {
+	order_flow.push_back(f);
+	Flow *new_flow = &order_flow.back();
+	order_edge.push_back(new_flow);
+	return new_flow;
+}
+
+void Graph::add_resource(const Resource &r) {
+	order_res.push_back(r);
+	Resource *r_ptr = &order_res.back();
+	resource.emplace(std::make_pair(r.get_name(), r_ptr));
 }
 
 Action *Graph::get_action(std::string name) {
-	return action[name].get();
+	return action[name];
 }
 
-std::vector<Action *> Graph::get_action_list() const {
-	return order_act;
-}
-
-void Graph::add_resource(std::string name) {
-	resource.emplace(std::make_pair(name, std::make_unique<Resource>(this, name)));
-	order_res.push_back(resource[name].get());
+std::vector<Action *> Graph::get_action_list() {
+	std::vector<Action *> act;
+	for (auto &a : order_act) {
+		act.push_back(&a);
+	}
+	return act;
 }
 
 Resource *Graph::get_resource(std::string name) {
-	return resource[name].get();
+	if (resource.count(name) > 0) {
+		return resource[name];
+	}
+	return new Resource("resource not found");
 }
 
-std::vector<Resource *> Graph::get_resource_list() const {
-	return order_res;
+std::vector<Resource *> Graph::get_resource_list() {
+	std::vector<Resource *> res;
+	for (auto &r : order_res) {
+		res.push_back(&r);
+	}
+	return res;
 }
 
 ResourceSet Graph::get_amounts() const {
-	std::unordered_map<Resource *, double> result;
+	std::unordered_map<std::string, double> result;
 	for (auto &r : resource) {
-		result.emplace(std::make_pair(r.second.get(), r.second->get_amount()));
+		result.emplace(std::make_pair(r.first, r.second->get_amount()));
 	}
 	return ResourceSet(result);
 }
 
-void Graph::set_win_func(std::function<double(ResourceSet)> f) {
+void Graph::set_win_func(std::function<double(const ResourceSet &)> f) {
 	win_func = f;
 }
 
@@ -73,98 +117,11 @@ double Graph::evaluate_win_func() {
 	return evaluate_win_func(get_amounts());
 }
 
-double Graph::evaluate_win_func(ResourceSet r) {
+double Graph::evaluate_win_func(const ResourceSet &r) {
 	if (!win_func) {
 		return 0.0;
 	}
 	return win_func(r);
-}
-
-void Graph::register_flow(Flow *f) {
-	edge.push_back(f);
-	flow.push_back(f);
-}
-
-void Graph::update_actions() {
-
-	// execute first action
-	std::pair<double, Action *> a = get_best_action().first_action();
-	if (a.second) {
-		a.second->do_event();
-	}
-}
-
-ActionOrder Graph::get_best_action() {
-	if (!win_func) {
-		return ActionOrder(this);
-	}
-
-	// current amounts
-	ResourceSet current_amounts = get_amounts();
-	double current_score = win_func(current_amounts);
-
-	std::vector<ActionOrder> orders;
-
-	// add blank order
-	orders.push_back(ActionOrder(this));
-
-	//
-	int max_iterations = 10;
-	for (int t = 0; t < max_iterations; ++t) {
-
-		// make new orders based of the existing list
-		std::vector<ActionOrder> new_orders;
-		for (auto &order : orders) {
-			ResourceSet order_amounts = order.get_effect(current_amounts, t);
-
-			// get available actions
-			// at time within the orders context
-			std::vector<Action *> available;
-			for (auto &a : action) {
-				if (a.second->can_do_event(order_amounts)) {
-					available.push_back(a.second.get());
-				}
-			}
-
-			for (auto &a : available) {
-				// add to the order
-				// and add a new branch
-				ActionOrder new_order = order;
-				new_order.add_action(t, a);
-				new_orders.push_back(new_order);
-			}
-
-		}
-		for (auto &order : new_orders) {
-			orders.push_back(order);
-		}
-	}
-
-	// find the most valuable
-	ActionOrder *best = &orders.front();
-	double best_score = 0;
-	for (auto &order : orders) {
-
-		// TODO: divide by time taken
-		double score = win_func(order.get_effect(current_amounts)) - current_score;
-
-		if (score > best_score) {
-			best = &order;
-			best_score = score;
-		}
-	}
-
-	best->set_value(best_score);
-	return *best;
-}
-
-std::vector<std::string> Graph::debug() {
-	std::vector<std::string> result;
-	for (auto &a : resource) {
-		double amount = a.second->get_amount();
-		result.push_back(a.first + " = " + std::to_string(amount));
-	}
-	return result;
 }
 
 std::string to_string(Graph &g) {
