@@ -2,4 +2,8 @@
 
 namespace graph {
 
+Simulation::Simulation() {
+	// TODO
+}
+
 }

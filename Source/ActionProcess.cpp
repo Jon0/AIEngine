@@ -62,8 +62,8 @@ ActionOrder ActionProcessV1::get_best_action(Graph *g) const {
 		std::sort(orders.begin(), orders.end(), [](ActionOrder a, ActionOrder b){
 			return a.value() > b.value();
 		});
-		if (orders.size() > 100) {
-			orders.resize(100, ActionOrder(g));
+		if (orders.size() > 10) {
+			orders.resize(10, ActionOrder(g));
 		}
 		}
 	}

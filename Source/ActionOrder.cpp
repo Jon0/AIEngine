@@ -69,27 +69,31 @@ ResourceSet ActionOrder::get_effect(ResourceSet set, double time_duration) {
 	std::deque<std::pair<double, Action *>> to_start(actions.begin(), actions.end());
 
 	// actions to be completed
-	// time, resource, amount
+	// time, action
 	// sorted by time
-	std::vector<std::tuple<double, Resource *, double>> to_complete;
+	std::deque<std::pair<double, Action *>> to_complete;
 
-	for (double t = 0.0; t < time_duration; t += 1.0) {
+	for (double t = 0.0; t <= time_duration; t += 1.0) {
 
 		// apply edges
-
 		// add effects
 		// TODO: may be many actions on time t
 		while (!to_start.empty() && t >= to_start.front().first) {
 
-			// apply all effects instantly for now
+			// apply start effects instantly
 			Action *act = to_start.front().second;
 			act->apply_start_effect(result);
-			act->apply_end_effect(result);
+			to_complete.push_back(std::make_pair(t + act->get_time(), act));
 			to_start.pop_front();
 		}
-	}
 
-	// TODO find the outcome
+		// complete effects
+		while (!to_complete.empty() && t >= to_complete.front().first) {
+			Action *act = to_complete.front().second;
+			act->apply_end_effect(result);
+			to_complete.pop_front();
+		}
+	}
 	return result;
 }
 
