@@ -17,6 +17,9 @@ class ActionOrder;
 class Edge;
 class Flow;
 
+/**
+ * TODO type players
+ */
 class GraphProducer {
 public:
 	GraphProducer();
@@ -30,6 +33,7 @@ public:
 	std::vector<Resource> get_resources() const;
 
 private:
+	std::vector<int> players;
 	std::vector<Action> actions;
 	std::vector<Location> locations;
 	std::vector<Resource> resources;
@@ -62,13 +66,15 @@ public:
 	 */
 	void set_win_func(std::function<double(const ResourceSet &)> f);
 
-	double evaluate_win_func();
-	double evaluate_win_func(const ResourceSet &);
+	double evaluate_win_func() const;
+	double evaluate_win_func(const ResourceSet &) const;
 
 private:
 	void add_action(const Action &);
 	Flow *add_flow(const Flow &);
 	void add_resource(const Resource &);
+
+	double default_win_func(const ResourceSet &) const;
 
 	// lists ordered by construct order
 	// pointers to items must remain so containers

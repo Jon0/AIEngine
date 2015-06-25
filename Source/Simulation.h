@@ -9,6 +9,8 @@ namespace graph {
 class Simulation {
 public:
 	Simulation();
+
+	void start();
 };
 
 }

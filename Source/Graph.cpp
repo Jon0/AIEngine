@@ -113,15 +113,23 @@ void Graph::set_win_func(std::function<double(const ResourceSet &)> f) {
 	win_func = f;
 }
 
-double Graph::evaluate_win_func() {
+double Graph::evaluate_win_func() const {
 	return evaluate_win_func(get_amounts());
 }
 
-double Graph::evaluate_win_func(const ResourceSet &r) {
+double Graph::evaluate_win_func(const ResourceSet &r) const {
 	if (!win_func) {
 		return 0.0;
 	}
 	return win_func(r);
+}
+
+
+double Graph::default_win_func(const ResourceSet &) const {
+	// TODO look for cycles
+	// and min max of each flow per cycle
+	// TODO identify the highest volume flow cycle
+	return 0.0;
 }
 
 std::string to_string(Graph &g) {

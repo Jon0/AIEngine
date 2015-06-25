@@ -6,4 +6,8 @@ Simulation::Simulation() {
 	// TODO
 }
 
+void Simulation::start() {
+
+}
+
 }
